@@ -11,9 +11,10 @@ Pictures, frames and transcripts from the 2021 archive of **[AIgorithmic Butterf
 | `i/w/mNNNNN.webp`, `i/t/mNNNNN.webp` | pictures, large and small. `m00001`–`m05909`: screenshots of the call window in the order they were pasted into the 2021 document; `m06xxx`: camera roll and other screenshots; `m07xxx`: made in 2026 from a recording that could not be read |
 | `i/index.json`, `i/text.json` | size, group, date and sensitivity mark of every picture; what OCR read in them (surnames, links, addresses and numbers removed) |
 | `r/index.json` | every public recording: calls, short phone videos, one voice memo |
-| `r/rNNN/f/NNNNN.webp` | one frame per minute (per 20 or 5 seconds for short recordings): the layer that was *seen* |
+| `r/rNNN/f/NNNNN.webp`, `r/rNNN/s/NNNNN.webp` | one frame per minute (per 20 or 5 seconds for short recordings), large (long side 960 px) and small (320 px): the layer that was *seen* |
 | `r/rNNN/voice.json` | the layer that was *said*, written down in 2026 by a very small speech model. It mishears, as the 2021 caption machine did. Also the call's chat, first names only |
 | `v/` | short phone videos and the voice memo, small copies |
+| branch [`audio`](https://github.com/ranaji10/aigorithmic-butterfly-effect-archive/tree/audio) | the sound of the calls: `rNNN/KKK.webm`, ten minutes each (KKK = second // 600), for the hours listed as `aud` in `r/index.json` |
 | `x/unread/` | a recording that was cut off before it could write its own index, read anyway: as pictures, and its bytes as sound |
 
 Not here: anything showing phone numbers, addresses, identity documents, chat or mail screens, messages from people who were never in the calls, or other people's posts. That material is held by the author for review.
