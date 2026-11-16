@@ -9,7 +9,8 @@ Pictures, frames and transcripts from the 2021 archive of **[AIgorithmic Butterf
 | | |
 |---|---|
 | `i/w/mNNNNN.webp`, `i/t/mNNNNN.webp` | pictures, large and small. `m00001`–`m05909`: screenshots of the call window in the order they were pasted into the 2021 document; `m06xxx`: camera roll and other screenshots; `m07xxx`: made in 2026 from a recording that could not be read |
-| `i/index.json`, `i/text.json` | size, group, date and sensitivity mark of every picture; what OCR read in them (surnames, links, addresses and numbers removed) |
+| `i/index.json`, `i/text.json` | size, group, date and sensitivity mark of every picture; what a machine read in them, read again on 16 Nov 2026: for screenshots of the call only the captions under the call window, for other pictures all readable words (surnames, links, addresses, numbers and anything that did not form words removed) |
+| `i/names.json` | where a machine read a listed first name written on screen: in which pictures, and in how many sampled frames of which call recordings. It says where a name was written, not who is in a picture |
 | `i/doc.json` | what the 2021 document says around each pasted screenshot: section heading, hashtags, the words above it, margin comments (addresses, links, numbers and surnames removed; only for public pictures) |
 | `r/index.json` | every public recording: calls, short phone videos, one voice memo |
 | `r/rNNN/f/NNNNN.webp`, `r/rNNN/s/NNNNN.webp` | one frame per minute (per 20 or 5 seconds for short recordings), large (long side 960 px) and small (320 px): the layer that was *seen* |
