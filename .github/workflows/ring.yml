@@ -1,0 +1,52 @@
+name: year ring
+# The archive's half of a ring. The main repository cuts ring-YYYY on itself (its workflow "year ring"); this one marks the
+# pictures, frames and transcripts (branch main) and the sound (branch audio) that the ring stands on:
+#   ring-YYYY        a release on main
+#   ring-YYYY-audio  a tag on audio
+# Run it by hand right after the main repository's ring, with the same year. A ring is cut once, so a run is a rehearsal
+# unless the box is unticked: it checks the names are free and says which commits it would mark, and makes nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: 'Year of the ring (the first one is 2021)'
+        required: true
+      rehearsal:
+        description: 'Rehearsal: check and say what would be marked, make nothing'
+        type: boolean
+        default: true
+permissions:
+  contents: write
+jobs:
+  ring:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: check, then mark
+        env:
+          GH_TOKEN: ${{ github.token }}
+          YEAR: ${{ inputs.year }}
+          REHEARSAL: ${{ inputs.rehearsal }}
+        run: |
+          case "$YEAR" in 20[2-9][0-9]) ;; *) echo "::error::not a year"; exit 1 ;; esac
+          API="repos/$GITHUB_REPOSITORY"
+          MAIN=$(gh api "$API/commits/main" --jq .sha)
+          AUDIO=$(gh api "$API/commits/audio" --jq .sha)
+          FAIL=0
+          for T in "ring-$YEAR" "ring-$YEAR-audio"; do
+            if gh api "$API/git/ref/tags/$T" >/dev/null 2>&1; then echo "::error::$T exists already"; FAIL=1; fi
+          done
+          {
+            echo "## ring-$YEAR, the archive"
+            echo
+            echo "- Pictures, frames and transcripts: branch \`main\`, commit \`$MAIN\` (release \`ring-$YEAR\`)."
+            echo "- The sound of the calls: branch \`audio\`, commit \`$AUDIO\` (tag \`ring-$YEAR-audio\`)."
+            echo
+            echo "The work itself, its rules and every mark: https://github.com/ranaji10/aigorithmic-butterfly-effect, release \`ring-$YEAR\`."
+            echo "Full-length originals: Internet Archive, items named \`aigorithmic-butterfly-effect-…\`."
+          } > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$FAIL" != 0 ]; then exit 1; fi
+          if [ "$REHEARSAL" = "true" ]; then echo "Rehearsal: everything is in order, nothing was made." | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          gh api -X POST "$API/git/refs" -f ref="refs/tags/ring-$YEAR-audio" -f sha="$AUDIO" >/dev/null
+          gh release create "ring-$YEAR" --repo "$GITHUB_REPOSITORY" --target "$MAIN" --title "Ring $YEAR: the archive" --notes-file "$RUNNER_TEMP/notes.md"
