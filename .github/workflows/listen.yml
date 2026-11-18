@@ -16,6 +16,9 @@ on:
       model:
         description: 'Speech model (faster-whisper name)'
         default: 'large-v3'
+      round:
+        description: 'Which round this is (the workflow starts itself again, up to five rounds, until every recording is heard)'
+        default: '1'
 permissions:
   contents: write
 jobs:
@@ -79,3 +82,35 @@ jobs:
           wait $PID; RC=$?
           save
           exit $RC
+  # The machines stop after five hours. If recordings are left, the work starts itself again (at most five rounds).
+  again:
+    needs: hear
+    if: ${{ always() && inputs.only == '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          path: arch
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            relisten
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: relisten
+          path: out
+      - name: is anything left?
+        env:
+          GH_TOKEN: ${{ github.token }}
+          N: ${{ inputs.shards }}
+          MODEL: ${{ inputs.model }}
+          ROUND: ${{ inputs.round }}
+        run: |
+          LEFT=$(python3 -c "import json,glob,os;p=json.load(open('arch/relisten/plan.json'))['plan'];d={os.path.basename(f)[:-5] for f in glob.glob('out/heard/*.json') if json.load(open(f)).get('done')};print(len(set(p)-d))")
+          echo "$LEFT recordings left after round $ROUND"
+          case "$ROUND" in 1|2|3|4) NEXT=$((ROUND+1));; *) NEXT=0;; esac
+          if [ "$LEFT" -gt 0 ] && [ "$NEXT" -gt 0 ]; then gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/listen.yml/dispatches" -f ref=main -f "inputs[shards]=$N" -f "inputs[model]=$MODEL" -f "inputs[round]=$NEXT"; fi
+
