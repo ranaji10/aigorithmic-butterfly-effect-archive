@@ -1,0 +1,1 @@
+{"id":"r055","model":"faster-whisper large-v3","done":true,"windows":{"149.9":{"a":149.9,"b":154.7,"signs":["strange"],"chunks":[{"s":149.9,"e":154.7,"lang":"en","p":{"en":0.986,"hi":0.005,"bn":0.0},"said":"en","segs":[[150.5,153.5,"when the respective lives become slightly clearer.",-0.52,0.05]]}]}}}

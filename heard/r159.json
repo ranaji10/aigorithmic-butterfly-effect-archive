@@ -1,0 +1,1 @@
+{"id":"r159","model":"faster-whisper large-v3","done":true,"windows":{"7.0":{"a":7.0,"b":16.0,"signs":["loop"],"chunks":[{"s":7.0,"e":16.0,"lang":"en","p":{"en":0.031,"hi":0.0,"bn":0.0},"said":"fr","segs":[[7.0,10.6,"I followed you, you told me to follow me, I followed you.",-0.6,0.18]]}]}}}
