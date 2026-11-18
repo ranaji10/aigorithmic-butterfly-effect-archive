@@ -69,18 +69,26 @@ jobs:
           ONLY: ${{ inputs.only }}
           MODEL: ${{ inputs.model }}
         run: |
+          # What is heard is written to res/, outside any git checkout. The saver never rebases: it takes the branch as it
+          # is now, lays this machine's files over it, and pushes; if another machine was faster, it does that again.
+          mkdir -p res out/heard
+          cp out/heard/*.json res/ 2>/dev/null || true
           save() {
-            ( cd out && git add -A heard && { git diff --cached --quiet || {
-                git -c user.name="the listening machine" -c user.email="actions@users.noreply.github.com" commit -q -m "heard again: machine $SHARD"
-                for k in 1 2 3 4 5 6; do git pull -q --rebase --autostash origin relisten && git push -q origin HEAD:relisten && break; sleep $((RANDOM % 20 + 5)); done; }; } ) || true
+            ls res/*.json >/dev/null 2>&1 || return 0
+            for k in 1 2 3 4 5 6 7 8; do
+              ( cd out && git fetch -q origin relisten && git reset -q --hard FETCH_HEAD && mkdir -p heard \
+                && for f in ../res/*.json; do python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$f" 2>/dev/null && cp "$f" heard/; done \
+                && git add -A heard && { git diff --cached --quiet || { git -c user.name="the listening machine" -c user.email="actions@users.noreply.github.com" commit -q -m "heard again: machine $SHARD" && git push -q origin HEAD:relisten; }; } ) && return 0
+              sleep $((RANDOM % 20 + 5))
+            done
+            echo "::warning::could not save what was heard (machine $SHARD)"; return 1
           }
-          mkdir -p out/heard
-          python3 site/tools/relisten.py --arch arch --plan arch/relisten/plan.json --out out/heard --shard "$SHARD/$N" --only "$ONLY" --model "$MODEL" --budget 18500 &
+          python3 site/tools/relisten.py --arch arch --plan arch/relisten/plan.json --out res --shard "$SHARD/$N" --only "$ONLY" --model "$MODEL" --budget 18500 &
           PID=$!
           n=0
-          while kill -0 $PID 2>/dev/null; do sleep 10; n=$((n+1)); if [ $((n % 90)) -eq 0 ]; then save; fi; done
+          while kill -0 $PID 2>/dev/null; do sleep 10; n=$((n+1)); if [ $((n % 60)) -eq 0 ]; then save || true; fi; done
           wait $PID; RC=$?
-          save
+          save || RC=1
           exit $RC
   # The machines stop after five hours. If recordings are left, the work starts itself again (at most five rounds).
   again:
