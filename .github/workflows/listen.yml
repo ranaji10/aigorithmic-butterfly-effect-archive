@@ -56,7 +56,7 @@ jobs:
           ref: relisten
           path: out
       - name: the speech model's library
-        run: pip install --quiet faster-whisper==1.2.1
+        run: pip install --quiet faster-whisper==1.2.1 av==14.4.0
       - name: listen
         env:
           SHARD: ${{ matrix.shard }}
