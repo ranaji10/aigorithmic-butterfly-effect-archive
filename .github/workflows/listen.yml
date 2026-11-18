@@ -56,7 +56,9 @@ jobs:
           ref: relisten
           path: out
       - name: the speech model's library
-        run: pip install --quiet faster-whisper==1.2.1 av==14.4.0
+        run: |
+          command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+          pip install --quiet faster-whisper==1.2.1
       - name: listen
         env:
           SHARD: ${{ matrix.shard }}
