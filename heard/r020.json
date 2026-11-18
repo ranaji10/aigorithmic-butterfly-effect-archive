@@ -1,0 +1,1 @@
+{"id":"r020","model":"faster-whisper large-v3","done":true,"windows":{"56.9":{"a":56.9,"b":62.6,"signs":["strange","rare"],"chunks":[{"s":56.9,"e":62.6,"lang":"en","p":{"en":0.839,"hi":0.002,"bn":0.0},"said":"en","segs":[[57.5,61.6,"The light hits the gloom on the grave",-0.32,0.24]]}]}}}
