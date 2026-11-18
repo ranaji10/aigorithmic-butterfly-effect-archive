@@ -1,0 +1,1 @@
+{"id":"r178","model":"faster-whisper large-v3","done":true,"windows":{"3.7":{"a":3.7,"b":7.5,"signs":["strange"],"chunks":[{"s":3.7,"e":7.5,"lang":"en","p":{"en":0.746,"hi":0.103,"bn":0.0},"said":"en","segs":[[4.3,6.4,"of the 10 day dark room experiment",-0.37,0.33]]}]}}}
