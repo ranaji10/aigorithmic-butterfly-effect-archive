@@ -1,0 +1,79 @@
+name: listen again
+# Hears once more the parts of the recordings where the first, English-only hearing wrote words without meaning
+# (relisten/plan.json, made by tools/relisten_find.py in the main repository), with a model that knows Hindi, Bengali
+# and English, and writes what it hears in the English alphabet. Started by hand. It publishes nothing: what it hears
+# goes to the branch "relisten" (heard/<recording>.json), and a steward merges it into r/<id>/voice.json with
+# tools/relisten_merge.py after reading it. It can be started again: finished recordings are passed over.
+on:
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: 'How many machines share the work'
+        default: '12'
+      only:
+        description: 'Rehearsal: only these recordings (ids with spaces between), on one machine'
+        default: ''
+      model:
+        description: 'Speech model (faster-whisper name)'
+        default: 'large-v3'
+permissions:
+  contents: write
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      list: ${{ steps.s.outputs.list }}
+    steps:
+      - id: s
+        env:
+          N: ${{ inputs.shards }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -n "$ONLY" ]; then echo 'list=[0]' >> "$GITHUB_OUTPUT"; else python3 -c "import os;print('list='+str(list(range(max(1,min(20,int(os.environ['N'])))))))" >> "$GITHUB_OUTPUT"; fi
+  hear:
+    needs: split
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.split.outputs.list) }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          path: arch
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            relisten
+            r/*/voice.json
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          repository: ranaji10/aigorithmic-butterfly-effect
+          path: site
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: relisten
+          path: out
+      - name: the speech model's library
+        run: pip install --quiet faster-whisper==1.2.1
+      - name: listen
+        env:
+          SHARD: ${{ matrix.shard }}
+          N: ${{ inputs.shards }}
+          ONLY: ${{ inputs.only }}
+          MODEL: ${{ inputs.model }}
+        run: |
+          save() {
+            ( cd out && git add -A heard && { git diff --cached --quiet || {
+                git -c user.name="the listening machine" -c user.email="actions@users.noreply.github.com" commit -q -m "heard again: machine $SHARD"
+                for k in 1 2 3 4 5 6; do git pull -q --rebase origin relisten && git push -q origin HEAD:relisten && break; sleep $((RANDOM % 20 + 5)); done; }; } )
+          }
+          mkdir -p out/heard
+          python3 site/tools/relisten.py --arch arch --plan arch/relisten/plan.json --out out/heard --shard "$SHARD/$N" --only "$ONLY" --model "$MODEL" --budget 18500 &
+          PID=$!
+          n=0
+          while kill -0 $PID 2>/dev/null; do sleep 10; n=$((n+1)); if [ $((n % 90)) -eq 0 ]; then save; fi; done
+          wait $PID; RC=$?
+          save
+          exit $RC
