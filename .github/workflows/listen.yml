@@ -2,7 +2,7 @@ name: listen again
 # Hears once more the parts of the recordings where the first, English-only hearing wrote words without meaning
 # (relisten/plan.json, made by tools/relisten_find.py in the main repository), with a model that knows Hindi, Bengali
 # and English, and writes what it hears in the English alphabet. Started by hand. It publishes nothing: what it hears
-# goes to the branch "relisten" (heard/<recording>.json), and a steward merges it into r/<id>/voice.json with
+# goes to the branch "relisten" (heard/<recording>.json; heard2/ for the sweep, plan2), and a steward merges it into r/<id>/voice.json with
 # tools/relisten_merge.py after reading it. It can be started again: finished recordings are passed over.
 on:
   workflow_dispatch:
@@ -19,6 +19,11 @@ on:
       round:
         description: 'Which round this is (the workflow starts itself again, up to five rounds, until every recording is heard)'
         default: '1'
+      plan:
+        description: 'Which list of windows: plan (the first: parts without meaning, and recordings never heard) or plan2 (the sweep for Hindi and Bengali)'
+        default: 'plan'
+        type: choice
+        options: [plan, plan2]
 permissions:
   contents: write
 jobs:
@@ -68,25 +73,28 @@ jobs:
           N: ${{ inputs.shards }}
           ONLY: ${{ inputs.only }}
           MODEL: ${{ inputs.model }}
+          WHICH: ${{ inputs.plan }}
         run: |
+          # The first plan is kept in heard/, the sweep in heard2/, so that neither passes over the other's finished recordings.
+          if [ "$WHICH" = "plan2" ]; then PLAN=relisten/plan2.json; DIR=heard2; else PLAN=relisten/plan.json; DIR=heard; fi
           # What is heard is written to res/, outside any git checkout. The saver never rebases: it takes the branch as it
           # is now, lays this machine's files over it, and pushes; if another machine was faster, it does that again.
           # A machine saves only the files it has changed itself. (Until 18 Nov 2026 every machine laid all the files it had
           # started with over the branch at every save, and so put finished recordings back to half-heard ones.)
-          mkdir -p res seed out/heard
-          cp out/heard/*.json res/ 2>/dev/null || true
-          cp out/heard/*.json seed/ 2>/dev/null || true
+          mkdir -p res seed "out/$DIR"
+          cp "out/$DIR"/*.json res/ 2>/dev/null || true
+          cp "out/$DIR"/*.json seed/ 2>/dev/null || true
           save() {
             ls res/*.json >/dev/null 2>&1 || return 0
             for k in 1 2 3 4 5 6 7 8; do
-              ( cd out && git fetch -q origin relisten && git reset -q --hard FETCH_HEAD && mkdir -p heard \
-                && for f in ../res/*.json; do if ! cmp -s "$f" "../seed/$(basename "$f")" && python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$f" 2>/dev/null; then cp "$f" heard/; fi; done \
-                && git add -A heard && { git diff --cached --quiet || { git -c user.name="the listening machine" -c user.email="actions@users.noreply.github.com" commit -q -m "heard again: machine $SHARD" && git push -q origin HEAD:relisten; }; } ) && return 0
+              ( cd out && git fetch -q origin relisten && git reset -q --hard FETCH_HEAD && mkdir -p "$DIR" \
+                && for f in ../res/*.json; do if ! cmp -s "$f" "../seed/$(basename "$f")" && python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$f" 2>/dev/null; then cp "$f" "$DIR/"; fi; done \
+                && git add -A "$DIR" && { git diff --cached --quiet || { git -c user.name="the listening machine" -c user.email="actions@users.noreply.github.com" commit -q -m "heard again: machine $SHARD" && git push -q origin HEAD:relisten; }; } ) && return 0
               sleep $((RANDOM % 20 + 5))
             done
             echo "::warning::could not save what was heard (machine $SHARD)"; return 1
           }
-          python3 site/tools/relisten.py --arch arch --plan arch/relisten/plan.json --out res --shard "$SHARD/$N" --only "$ONLY" --model "$MODEL" --budget 18500 &
+          python3 site/tools/relisten.py --arch arch --plan "arch/$PLAN" --out res --shard "$SHARD/$N" --only "$ONLY" --model "$MODEL" --budget 18500 &
           PID=$!
           n=0
           while kill -0 $PID 2>/dev/null; do sleep 10; n=$((n+1)); if [ $((n % 60)) -eq 0 ]; then save || true; fi; done
@@ -119,9 +127,11 @@ jobs:
           N: ${{ inputs.shards }}
           MODEL: ${{ inputs.model }}
           ROUND: ${{ inputs.round }}
+          WHICH: ${{ inputs.plan }}
         run: |
-          LEFT=$(python3 -c "import json,glob,os;p=json.load(open('arch/relisten/plan.json'))['plan'];d={os.path.basename(f)[:-5] for f in glob.glob('out/heard/*.json') if json.load(open(f)).get('done')};print(len(set(p)-d))")
+          if [ "$WHICH" = "plan2" ]; then export PLAN=relisten/plan2.json DIR=heard2; else export PLAN=relisten/plan.json DIR=heard; fi
+          LEFT=$(python3 -c "import json,glob,os;p=json.load(open('arch/'+os.environ['PLAN']))['plan'];d={os.path.basename(f)[:-5] for f in glob.glob('out/'+os.environ['DIR']+'/*.json') if json.load(open(f)).get('done')};print(len(set(p)-d))")
           echo "$LEFT recordings left after round $ROUND"
           case "$ROUND" in 1|2|3|4) NEXT=$((ROUND+1));; *) NEXT=0;; esac
-          if [ "$LEFT" -gt 0 ] && [ "$NEXT" -gt 0 ]; then gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/listen.yml/dispatches" -f ref=main -f "inputs[shards]=$N" -f "inputs[model]=$MODEL" -f "inputs[round]=$NEXT"; fi
+          if [ "$LEFT" -gt 0 ] && [ "$NEXT" -gt 0 ]; then gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/listen.yml/dispatches" -f ref=main -f "inputs[shards]=$N" -f "inputs[model]=$MODEL" -f "inputs[round]=$NEXT" -f "inputs[plan]=$WHICH"; fi
 
