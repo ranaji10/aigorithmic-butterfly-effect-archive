@@ -1,0 +1,1 @@
+{"id":"r178","model":"faster-whisper large-v3","done":true,"windows":{"0.6":{"a":0.6,"b":15.3,"signs":["sweep"],"chunks":[{"s":0.6,"e":15.3,"lang":"en","p":{"en":0.886,"hi":0.052,"bn":0.0},"said":"en","skipped":true,"segs":[]}]}}}
