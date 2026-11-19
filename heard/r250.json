@@ -1,0 +1,1 @@
+{"id":"r250","model":"faster-whisper large-v3","done":true,"windows":{"0.0":{"a":0.0,"b":14.5,"signs":["new"],"chunks":[{"s":0.0,"e":14.5,"lang":"en","p":{"en":0.884,"hi":0.073,"bn":0.001},"said":"en","segs":[[0.3,4.1,"Hey, what's up? Yes",-0.37,0.26],[11.7,13.8,"Thank you, thank you, I'm ending the call right now",-0.37,0.26]]}]}}}
