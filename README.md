@@ -14,6 +14,7 @@ Pictures, frames and transcripts from the 2021 archive of **[AIgorithmic Butterf
 | `i/names.json` | where a machine read a listed first name written on screen: in which pictures, and in how many frames (one a minute, all of them read on 17 Nov 2026) of which call recordings. It says where a name was written, not who is in a picture |
 | `i/doc.json` | what the 2021 document says around each pasted screenshot: section heading, hashtags, the words above it, margin comments (addresses, links, numbers and surnames removed; only for public pictures) |
 | `r/index.json` | every public recording: calls, short phone videos, screen recordings of the phone (`screen`), one voice memo |
+| `r/find.json` | everything heard in the recordings as one file, for the site's Find: for each recording one line per thing heard, `second<TAB>words`, the call chat, and where Hindi or Bengali was heard. A copy of the voice files and of nothing else; made again by `tools/search_build.py` of the site repository whenever one of them changes |
 | `r/rNNN/f/NNNNN.webp`, `r/rNNN/s/NNNNN.webp` | one frame per minute (per 20 or 5 seconds for short recordings), large (long side 960 px) and small (320 px): the layer that was *seen* |
 | `r/rNNN/voice.json` | the layer that was *said*, written down in 2026 by a very small speech model. It mishears, as the 2021 caption machine did. Also the call's chat, first names only |
 | `v/` | short phone videos and the voice memo, small copies |
